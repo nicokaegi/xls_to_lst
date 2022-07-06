@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <input type="file" id="fileUpload" >
+     <div id="main">
+       <p>
+       <br>this webpage takes in xls files that are structured in one of two ways <br>
+
+       <br>either<br>
+
+       <br>Legal Name,	Preferred Name,	Rowan ID Number,	Class Level,	Program	Major 1,		Registration Status,	Email Address<br>
+
+       <br>or<br>
+
+       <br>Preferred Name,	Rowan ID Number,	Email Address<br>
+
+       <br>and spits out a webwork complient class list file<br>
+       </p>
+    </div>
+    <script src="https://unpkg.com/xlsx/dist/shim.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script type="text/javascript">
+
+      //var input_file = XLSX.readFile("/home/sindri/section2/NicksPlayGround/javaSrcipt/xls_lst/class_list_template_banner.xls");
+
+      var output_sheets = {};
+      var old_main_html = document.getElementById("main").innerHTML;
+
+      function  trim_sheet(sheet){
+
+        /* takes in a sheet refrence, and removes the a column, as well as anyrows lower than 15
+           thus leaving the sheet only with the needed data
+        */
+            if (number_of_columns(sheet) == 10){
+              for( cell in sheet){
+
+                  if((cell[0] == "A") || (cell.slice(1) < 15)){
+
+                    delete sheet[cell]
+
+                  }
+              }
+            } else {
+
+              for( cell in sheet){
+
+                  if((cell[0] == "A") || (cell.slice(1) <= 15)){
+
+                    delete sheet[cell]
+
+                  }
+              }
+            }
+      }
+
+      function generate_new_sheet_3(sheet){
+
+        /* takes in a trimed down sheet, and leaves a class list compartiable sheet*/
+        /* for a couple columns takesout all the data*/
+
+        var last_names = [];
+        var first_names = [];
+        for( cell in sheet){
+
+            if(cell[0] == "B"){
+              last_names.push((sheet[cell].v).split(",")[0]);
+              first_names.push((sheet[cell].v).split(",")[1].split(" ")[1]);
+
+            }
+
+        }
+
+        var banner_ids = [];
+        for( cell in sheet){
+
+            if(cell[0] == "C"){
+              banner_ids.push((sheet[cell].v));
+            }
+
+        }
+
+        var emails = [];
+        var login_names = [];
+        for( cell in sheet){
+
+            if(cell[0] == "D"){
+              emails.push((sheet[cell].v));
+              login_names.push((sheet[cell].v).split("@")[0]);
+            }
+
+        }
+
+        /* make a blank array to stand in for all the columns this script leaves blank
+           in the final class list file
+        */
+
+        var blank_values  = Array(banner_ids.length).fill(" ");
+        var new_values = [
+                           banner_ids,
+                           last_names,
+                           first_names,
+                           blank_values,
+                           blank_values,
+                           blank_values,
+                           blank_values,
+                           emails,
+                           login_names,
+                           blank_values,
+                           blank_values,
+                         ]
+
+
+        /*transpose the data, and then make a new sheet object*/
+        new_values = new_values[0].map((_, colIndex) => new_values.map(row => row[colIndex]));
+        new_values = XLSX.utils.aoa_to_sheet(new_values);
+
+        return new_values;
+
+
+      }
+
+      function generate_new_sheet_8(sheet){
+
+        /* takes in a trimed down sheet, and leaves a class list compartiable sheet*/
+        /* for a couple columns takesout all the data*/
+        var last_names = [];
+        for( cell in sheet){
+
+            if(cell[0] == "B"){
+              last_names.push((sheet[cell].v).split(",")[0]);
+            }
+
+        }
+
+        var first_names = [];
+        var first_name = "";
+        for( cell in sheet){
+
+            if(cell[0] == "C"){
+
+              first_names.push((sheet[cell].v).split(",")[1].split(" ")[1]);
+            }
+
+        }
+
+        var banner_ids = [];
+        for( cell in sheet){
+
+            if(cell[0] == "D"){
+              banner_ids.push((sheet[cell].v));
+            }
+
+        }
+
+        var emails = [];
+        var login_names = [];
+        for( cell in sheet){
+
+            if(cell[0] == "J"){
+              emails.push((sheet[cell].v));
+              login_names.push((sheet[cell].v).split("@")[0]);
+            }
+
+        }
+
+        /* make a blank array to stand in for all the columns this script leaves blank
+           in the final class list file
+        */
+        var blank_values  = Array(banner_ids.length).fill(" ");
+        var new_values = [
+                           banner_ids,
+                           last_names,
+                           first_names,
+                           blank_values,
+                           blank_values,
+                           blank_values,
+                           blank_values,
+                           emails,
+                           login_names,
+                           blank_values,
+                           blank_values,
+                         ]
+
+
+        /*transpose the data, and then make a new sheet object*/
+        new_values = new_values[0].map((_, colIndex) => new_values.map(row => row[colIndex]));
+        new_values = XLSX.utils.aoa_to_sheet(new_values);
+
+        return new_values;
+
+
+      }
+
+      function generate_html_table(work_sheet, sheet_name){
+
+        /* create, nad append a new sheet file to the main container */
+
+        var container = document.getElementById("main");
+
+        container.innerHTML += `<H3>${sheet_name}</H3>${XLSX.utils.sheet_to_html(work_sheet)}<br>`;
+
+      }
+
+
+      function export_to_lst(){
+
+        for(sheet in output_sheets){
+
+          console.log(sheet);
+          var ouput_sheet = XLSX.utils.sheet_to_csv(output_sheets[sheet])
+          console.log(ouput_sheet);
+          var hidden_element = document.createElement('a');
+          hidden_element.href = 'data:text/csv;charset=utf-8,' + encodeURI(ouput_sheet);
+          hidden_element.target = '_blank';
+
+          hidden_element.download = sheet + ".lst";
+          hidden_element.click();
+
+        }
+
+        var container = document.getElementById("main");
+        container.innerHTML = old_main_html;
+
+      }
+
+      function number_of_columns(sheet){
+
+        var column_labels = new Set();
+
+        for( cell in sheet){
+            column_labels.add(cell[0]);
+
+        }
+
+        return column_labels.size
+
+      }
+
+      async function handleFileAsync(e) {
+
+        var container = document.getElementById("main");
+
+        output_sheets = {};
+        container.innerHTML = "";
+
+        const file = e.target.files[0];
+        /* data is an ArrayBuffer */
+        var name = file.name;
+        fileNameParts = name.split(".");
+        var doctype = fileNameParts[fileNameParts.length - 1].toLowerCase();
+        if(doctype == "xls" || doctype == "xlsx"){
+
+
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            console.log(workbook.Sheets);
+            var export_buttons = [];
+            var container = document.getElementById("main");
+
+            container.innerHTML += "<br><button type='button' onclick='export_to_lst()'> export to webwork .lst files</button><br>";
+
+            for (sheet in workbook.Sheets){
+
+              trim_sheet(workbook.Sheets[sheet]);
+
+              if (number_of_columns(workbook.Sheets[sheet]) == 10){
+                  new_sheet = generate_new_sheet_8(workbook.Sheets[sheet]);
+
+              } else {
+                  new_sheet = generate_new_sheet_3(workbook.Sheets[sheet]);
+
+              }
+
+              generate_html_table(new_sheet, sheet)
+              output_sheets[sheet] = new_sheet;
+
+            }
+
+
+        }
+        else{
+            alert("not a xls or a xlsx file");
+
+        }
+
+      }
+
+      //var input_dom_element = document.getElementById("input_dom_element");
+
+      document.getElementById("fileUpload").addEventListener("change", handleFileAsync, false);
+     </script>
+  </body>
+</html>
