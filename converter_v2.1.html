@@ -224,6 +224,7 @@
 
         var container = document.getElementById("main");
         container.innerHTML = old_main_html;
+        document.getElementById("fileUpload").addEventListener("change", handleFileAsync, false);
 
       }
 
